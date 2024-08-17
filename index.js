@@ -33,6 +33,16 @@ async function run() {
         const category = req.query.category || '';
         const priceRange = req.query.priceRange ? req.query.priceRange.split(',').map(Number) : [0, Infinity];
         const skip = (page - 1) * limit;  
+        const sort=req.query.sort||'';
+
+        let sortOptions = {};
+        if (sort === 'priceAsc') {
+          sortOptions = { price: 1 };
+        } else if (sort === 'priceDesc') {
+          sortOptions = { price: -1 };
+        } else if (sort === 'dateDesc') {
+          sortOptions = { dateAdded: -1 };
+        }
      
         // Ensure page and limit are positive integers
         if (page < 1 || limit < 1) {
@@ -48,7 +58,12 @@ async function run() {
         };
     
         const [result, totalItems] = await Promise.all([
-          phoneCollection.find(searchFilter).skip(skip).limit(limit).toArray(),
+          phoneCollection
+          .find(searchFilter)
+          .sort(sortOptions)
+          .skip(skip)
+          .limit(limit)
+          .toArray(),
           phoneCollection.countDocuments(searchFilter) 
         ]);
     
