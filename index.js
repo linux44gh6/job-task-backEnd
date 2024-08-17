@@ -29,19 +29,31 @@ async function run() {
         const page = parseInt(req.query.page) || 1;  
         const limit = parseInt(req.query.limit) || 10;  
         const search = req.query.search || '';
+        const brand = req.query.brand || '';
+        const category = req.query.category || '';
+        const priceRange = req.query.priceRange ? req.query.priceRange.split(',').map(Number) : [0, Infinity];
         const skip = (page - 1) * limit;  
+     
+        // Ensure page and limit are positive integers
+        if (page < 1 || limit < 1) {
+          return res.status(400).json({ message: 'Invalid page or limit value' });
+        }
     
-        const searchFilter = search ? { productName: { $regex: search, $options: 'i' } } :{};
-
-        const result = await phoneCollection
-          .find(searchFilter)
-          .skip(skip)  
-          .limit(limit)  
-          .toArray();
-        const totalItems = await phoneCollection.countDocuments();
+        // Build search filter
+        const searchFilter = {
+          productName: { $regex: search, $options: 'i' },
+          ...(brand && { brand: { $regex: brand, $options: 'i' } }),
+          ...(category && { category: { $regex: category, $options: 'i' } }),
+          price: { $gte: priceRange[0], $lte: priceRange[1] }
+        };
+    
+        const [result, totalItems] = await Promise.all([
+          phoneCollection.find(searchFilter).skip(skip).limit(limit).toArray(),
+          phoneCollection.countDocuments(searchFilter) 
+        ]);
+    
         const totalPages = Math.ceil(totalItems / limit);
     
-        
         res.send({
           items: result,  
           totalPages,  
