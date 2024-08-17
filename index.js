@@ -44,7 +44,7 @@ async function run() {
           sortOptions = { dateAdded: -1 };
         }
      
-        // Ensure page and limit are positive integers
+        
         if (page < 1 || limit < 1) {
           return res.status(400).json({ message: 'Invalid page or limit value' });
         }
